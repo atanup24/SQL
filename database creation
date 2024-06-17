@@ -1,0 +1,14 @@
+#Merge tables
+SELECT * FROM table1
+UNION
+SELECT * FROM table2
+UNION
+SELECT * FROM table3
+# add columns to dataset
+-- Update year, month, and day columns with constant values
+SET SQL_SAFE_UPDATES = 0;  -- Temporarily disable safe updates
+
+UPDATE ndvi_values_20120701
+SET year = 2012, month = 07, day = 01;
+
+SET SQL_SAFE_UPDATES = 1;  -- Enable safe updates again
