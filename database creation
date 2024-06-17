@@ -26,3 +26,9 @@ UPDATE ndvi_values_20120701
 SET year = 2012, month = 07, day = 01;
 
 SET SQL_SAFE_UPDATES = 1;  -- Enable safe updates again
+
+# rearrange table
+SELECT Latitude, Longitude, NDVI, Year, Month, Day
+FROM merged_dataset
+ORDER BY Latitude, Longitude;
+
