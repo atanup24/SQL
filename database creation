@@ -1,3 +1,17 @@
+#Add columns to dataset
+-- Add year column
+ALTER TABLE ndvi_values_20120702
+ADD COLUMN year INT;
+
+-- Add month column
+ALTER TABLE ndvi_values_20120702
+ADD COLUMN month INT;
+
+-- Add day column
+ALTER TABLE ndvi_values_20120702
+ADD COLUMN day INT;
+
+
 #Merge tables
 SELECT * FROM table1
 UNION
