@@ -31,4 +31,115 @@ SET SQL_SAFE_UPDATES = 1;  -- Enable safe updates again
 SELECT Latitude, Longitude, NDVI, Year, Month, Day
 FROM merged_dataset
 ORDER BY Latitude, Longitude;
+###################################################################
+DROP PROCEDURE IF EXISTS AddDateColumns;
 
+
+DELIMITER //
+
+CREATE PROCEDURE AddDateColumns()
+BEGIN
+    DECLARE i INT DEFAULT 9;  -- Starting with table ndvi_values_20120709
+    DECLARE end_i INT DEFAULT 31;  -- Ending with table ndvi_values_20120731
+    DECLARE table_name VARCHAR(255);
+    DECLARE year_value INT DEFAULT 2012;
+    DECLARE month_value INT DEFAULT 7;
+    DECLARE day_value INT;
+    DECLARE table_exists INT DEFAULT 0;
+    DECLARE column_exists INT DEFAULT 0;
+
+    label_loop: LOOP
+        -- Construct the table name
+        SET table_name = CONCAT('ndvi_values_201207', LPAD(i, 2, '0'));
+
+        -- Extract the day from the current iteration
+        SET day_value = i;
+
+        -- Debug message to check the current table
+        SELECT CONCAT('Processing table: ', table_name) AS debug_message;
+
+        -- Check if the table exists
+        SET @check_table = CONCAT('SELECT COUNT(*) INTO @table_exists FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = \'', table_name, '\'');
+        PREPARE stmt FROM @check_table;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+
+        -- Debug message to check table existence
+        SELECT CONCAT('Table exists: ', @table_exists) AS debug_message;
+
+        -- If the table exists, add columns and update them
+        IF @table_exists > 0 THEN
+            -- Check if the year column exists
+            SET @check_column = CONCAT('SELECT COUNT(*) INTO @column_exists FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = \'', table_name, '\' AND column_name = \'year\'');
+            PREPARE stmt FROM @check_column;
+            EXECUTE stmt;
+            DEALLOCATE PREPARE stmt;
+
+            -- Debug message to check year column existence
+            SELECT CONCAT('Year column exists: ', @column_exists) AS debug_message;
+
+            -- Add the year column if it doesn't exist
+            IF @column_exists = 0 THEN
+                SET @query = CONCAT('ALTER TABLE ', table_name, ' ADD COLUMN year INT');
+                PREPARE stmt FROM @query;
+                EXECUTE stmt;
+                DEALLOCATE PREPARE stmt;
+            END IF;
+
+            -- Check if the month column exists
+            SET @check_column = CONCAT('SELECT COUNT(*) INTO @column_exists FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = \'', table_name, '\' AND column_name = \'month\'');
+            PREPARE stmt FROM @check_column;
+            EXECUTE stmt;
+            DEALLOCATE PREPARE stmt;
+
+            -- Debug message to check month column existence
+            SELECT CONCAT('Month column exists: ', @column_exists) AS debug_message;
+
+            -- Add the month column if it doesn't exist
+            IF @column_exists = 0 THEN
+                SET @query = CONCAT('ALTER TABLE ', table_name, ' ADD COLUMN month INT');
+                PREPARE stmt FROM @query;
+                EXECUTE stmt;
+                DEALLOCATE PREPARE stmt;
+            END IF;
+
+            -- Check if the day column exists
+            SET @check_column = CONCAT('SELECT COUNT(*) INTO @column_exists FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = \'', table_name, '\' AND column_name = \'day\'');
+            PREPARE stmt FROM @check_column;
+            EXECUTE stmt;
+            DEALLOCATE PREPARE stmt;
+
+            -- Debug message to check day column existence
+            SELECT CONCAT('Day column exists: ', @column_exists) AS debug_message;
+
+            -- Add the day column if it doesn't exist
+            IF @column_exists = 0 THEN
+                SET @query = CONCAT('ALTER TABLE ', table_name, ' ADD COLUMN day INT');
+                PREPARE stmt FROM @query;
+                EXECUTE stmt;
+                DEALLOCATE PREPARE stmt;
+            END IF;
+
+            -- Update the year, month, and day columns with the appropriate values
+            SET @query = CONCAT('UPDATE ', table_name, ' SET year = ', year_value, ', month = ', month_value, ', day = ', day_value);
+            PREPARE stmt FROM @query;
+            EXECUTE stmt;
+            DEALLOCATE PREPARE stmt;
+        ELSE
+            -- If the table does not exist, exit the loop
+            LEAVE label_loop;
+        END IF;
+
+        -- Increment the day
+        SET i = i + 1;
+
+        -- Exit the loop if we have processed all tables
+        IF i > end_i THEN
+            LEAVE label_loop;
+        END IF;
+    END LOOP label_loop;
+END //
+
+DELIMITER ;
+
+CALL AddDateColumns();
