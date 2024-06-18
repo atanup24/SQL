@@ -143,3 +143,39 @@ END //
 DELIMITER ;
 
 CALL AddDateColumns();
+##############################################################################
+
+DELIMITER //
+
+CREATE PROCEDURE CombineTables()
+BEGIN
+    DECLARE i INT DEFAULT 1;
+    DECLARE max_days INT DEFAULT 31;
+    DECLARE table_name VARCHAR(100);
+    DECLARE sql_query TEXT;  -- Use TEXT for longer queries
+
+    WHILE i <= max_days DO
+        SET table_name = CONCAT('ndvi_values_201201', LPAD(i, 2, '0'));
+        
+        -- Construct the dynamic SQL query for UNION ALL
+        SET sql_query = CONCAT(
+            'INSERT INTO combined_ndvi_values (latitude, longitude, NDVI, year, month, day) ',
+            'SELECT latitude, longitude, NDVI, 2012 AS year, 7 AS month, ', i, ' AS day ',
+            'FROM ', table_name, ' ',
+            'WHERE NDVI NOT LIKE ''--'''
+        );
+
+        -- Prepare and execute the dynamic SQL statement
+        SET @sql_query = sql_query;
+        PREPARE stmt FROM @sql_query;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+
+        SET i = i + 1;
+    END WHILE;
+
+END //
+
+DELIMITER ;
+
+CALL CombineTables();
